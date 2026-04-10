@@ -21,7 +21,7 @@
         <div class="max-w-md mx-auto">
             <div class="flex items-center gap-3 mb-2">
                 <img src="/img/srwok-portada1.jpg" class="w-10 h-10 rounded-full object-cover border-2 border-white/40" alt="Sr WOK"/>
-                <img src="/img/srwok-logo.jpg" class="h-8 object-contain" alt="Sr WOK"/>
+                <span class="text-white/90 font-semibold text-lg tracking-wide">Sr WOK</span>
             </div>
             <h1 class="text-white text-2xl font-bold leading-snug">¿A dónde enviamos<br>tu pedido?</h1>
         </div>
