@@ -31,21 +31,11 @@
 
     {{-- ===== HEADER RESTAURANTE ===== --}}
     <div class="bg-white">
-        {{-- Banner --}}
-        <div class="relative h-36 bg-gray-900 overflow-hidden">
-            <img src="/img/srwok-portada1.jpg" alt="" class="img-cover opacity-70"/>
-            <a href="/" class="absolute top-3 left-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
-                <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                </svg>
-            </a>
-        </div>
-
         {{-- Info restaurante --}}
         <div class="px-4 pt-3 pb-0">
             <div class="flex items-start gap-3 mb-3">
                 {{-- Logo flotante sobre el banner --}}
-                <div class="w-14 h-14 rounded-xl overflow-hidden border-2 border-white shadow-md flex-shrink-0 -mt-7 bg-white">
+                <div class="w-14 h-14 rounded-xl overflow-hidden border-2 border-white shadow-md flex-shrink-0 bg-white">
                     <img src="/img/fondo.jpg" class="img-cover" alt="Sr WOK"/>
                 </div>
                 <div class="flex-1 min-w-0 pt-1">
