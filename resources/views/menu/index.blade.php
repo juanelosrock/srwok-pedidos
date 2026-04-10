@@ -542,7 +542,7 @@ function menuApp() {
     return {
         cargando: true, cargandoAdicionales: false, modal: null,
         menu: [], categorias: [], categoriaFiltro: '0',
-        carrito: [], valorDomicilio: 3600, tienda: {}, tiendaAbierta: true,
+        carrito: [], valorDomicilio: 0, tienda: {}, tiendaAbierta: true,
         productoActual: {}, categoriaActual: {}, cantidad: 1,
         adicionalesProducto: [], seleccionAdicionales: {}, puedoAgregar: false,
         formaPagoSeleccionada: '',
@@ -583,7 +583,7 @@ function menuApp() {
             if (data.length > 0) {
                 const d = data[0];
                 this.tienda = { foto: d.foto, nombre: d.tiendanombre, descripcion: d.tiendadescripcion, tiempoEntrega: d.tiendatiempoentrega, apertura: d.tiendaapertura, cierre: d.tiendacierre };
-                this.valorDomicilio = parseInt(d.tiendadelivery) || 3600;
+                this.valorDomicilio = parseInt(d.tiendadelivery) || 0;
                 localStorage.setItem('valordomicilio', this.valorDomicilio);
                 if (parseInt(d.tiendahorario) === 0) this.modal = 'cerrado';
                 if (parseInt(d.tiendaestado) === 0) { this.tiendaAbierta = false; this.modal = 'cerrado'; }
