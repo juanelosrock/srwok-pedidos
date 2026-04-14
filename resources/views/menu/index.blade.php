@@ -220,7 +220,7 @@
                 <template x-if="!cargandoAdicionales && adicionalesProducto.length > 0">
                     <div class="divide-y divide-gray-50">
                         <template x-for="grupo in adicionalesProducto" :key="grupo.idcategoria">
-                            <div class="px-4 py-4">
+                            <div class="px-4 py-4" :id="'grupo-' + grupo.idcategoria">
                                 <div class="flex items-center justify-between mb-3">
                                     <div>
                                         <h4 class="font-bold text-gray-900 text-sm" x-text="grupo.nombrecat"></h4>
@@ -255,7 +255,7 @@
                                                     :name="'grupo-' + grupo.idcategoria"
                                                     :value="adic.adicionalesid"
                                                     x-model="seleccionAdicionales[grupo.idcategoria]"
-                                                    @change="verificarAdicionales()"
+                                                    @change="verificarAdicionales(); avanzarGrupo(grupo.idcategoria)"
                                                     class="sr-only"
                                                 />
                                             </div>
@@ -623,6 +623,17 @@ function menuApp() {
             const requeridos = this.adicionalesProducto.length;
             const completados = Object.values(this.seleccionAdicionales).filter(v => v !== '').length;
             this.puedoAgregar = completados >= requeridos;
+        },
+
+        avanzarGrupo(idcategoria) {
+            const idx = this.adicionalesProducto.findIndex(g => g.idcategoria == idcategoria);
+            const siguiente = this.adicionalesProducto[idx + 1];
+            if (siguiente) {
+                setTimeout(() => {
+                    const el = document.getElementById('grupo-' + siguiente.idcategoria);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 150);
+            }
         },
 
         agregarAlCarrito() {
