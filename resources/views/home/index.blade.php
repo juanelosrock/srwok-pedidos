@@ -237,7 +237,10 @@ function homeApp() {
         async buscarDireccion() {
             this.errorDir = '';
             const { tipo, num1, orient1, num2, orient2, num3 } = this.dir;
-            const direccion = [tipo, num1, orient1, num2, orient2, num3].filter(Boolean).join(' ');
+            const partes = [tipo, num1, orient1 || '', num2];
+            if (orient2) partes.push(orient2);
+            if (num3) partes.push(num3);
+            const direccion = partes.join(' ');
             if (!tipo || !num1) { this.errorDir = 'Ingresa al menos el tipo de vía y número'; return; }
             this.buscando = true;
             try {
