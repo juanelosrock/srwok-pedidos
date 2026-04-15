@@ -759,6 +759,8 @@ function menuApp() {
                 totales: JSON.stringify(this.carrito.map(i => ({ total: i.total }))),
                 contador: this.carrito.length, total: this.totalConDomicilio,
                 valordomicilio: this.valorDomicilio, fcm: localStorage.getItem('fcm') || '',
+                cupon_codigo:   this.cupon.aplicado ? this.cupon.codigo : '',
+                cupon_descuento: this.cupon.aplicado ? this.cupon.descuento : 0,
             };
             try {
                 const res = await this.apiPost('{{ route("api.pedido") }}', payload);

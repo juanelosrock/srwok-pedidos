@@ -30,6 +30,8 @@ class OrderController extends Controller
             'total'         => ['required', 'numeric'],
             'valordomicilio'=> ['required', 'numeric'],
             'fcm'           => ['nullable', 'string'],
+            'cupon_codigo'  => ['nullable', 'string'],
+            'cupon_descuento' => ['nullable', 'numeric'],
         ]);
 
         $tiposPago = [
@@ -50,6 +52,12 @@ class OrderController extends Controller
         );
 
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
+
+        if (!empty($data['cupon_codigo'])) {
+            $orderId = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
+            $this->redimirCupon($data['cupon_codigo'], (int) $data['total'], $data['celular'], $orderId);
+        }
+
         return response()->json($respuesta);
     }
 
@@ -73,6 +81,29 @@ class OrderController extends Controller
         ]);
 
         return response()->json($response->json(), $response->status());
+    }
+
+    private function redimirCupon(string $code, int $amount, string $phone, string $orderId): void
+    {
+        try {
+            Http::withHeaders([
+                'Content-Type'    => 'application/json',
+                'Accept'          => 'application/json',
+                'X-Client-Id'     => config('cupones.client_id'),
+                'X-Client-Secret' => config('cupones.client_secret'),
+            ])->post(
+                str_replace('/validate', '/redeem', config('cupones.url')),
+                [
+                    'code'     => $code,
+                    'amount'   => $amount,
+                    'phone'    => $phone,
+                    'channel'  => 'pos',
+                    'order_id' => $orderId,
+                ]
+            );
+        } catch (\Throwable) {
+            // Si falla la redención no bloqueamos el pedido, queda registrado en logs
+        }
     }
 
     public function estado(Request $request): JsonResponse
