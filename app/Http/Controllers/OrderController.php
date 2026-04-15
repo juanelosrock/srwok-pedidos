@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\SibcoApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
@@ -50,6 +51,28 @@ class OrderController extends Controller
 
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
         return response()->json($respuesta);
+    }
+
+    public function validarCupon(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code'   => ['required', 'string'],
+            'amount' => ['required', 'numeric'],
+            'phone'  => ['nullable', 'string'],
+        ]);
+
+        $response = Http::withHeaders([
+            'Content-Type'    => 'application/json',
+            'Accept'          => 'application/json',
+            'X-Client-Id'     => config('cupones.client_id'),
+            'X-Client-Secret' => config('cupones.client_secret'),
+        ])->post(config('cupones.url'), [
+            'code'   => $data['code'],
+            'amount' => $data['amount'],
+            'phone'  => $data['phone'] ?? '',
+        ]);
+
+        return response()->json($response->json(), $response->status());
     }
 
     public function estado(Request $request): JsonResponse

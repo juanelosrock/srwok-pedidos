@@ -329,6 +329,57 @@
                     </div>
                     <span class="font-semibold text-gray-700" x-text="'$' + formatNum(valorDomicilio)"></span>
                 </div>
+
+                {{-- Cupón de descuento --}}
+                <div class="px-4 py-3 border-t border-gray-50">
+                    <template x-if="!cupon.aplicado">
+                        <div>
+                            <div class="flex gap-2">
+                                <input
+                                    x-model="cupon.codigo"
+                                    @keydown.enter="aplicarCupon()"
+                                    type="text"
+                                    placeholder="Código de cupón"
+                                    class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 uppercase"
+                                    :disabled="validandoCupon"
+                                />
+                                <button
+                                    @click="aplicarCupon()"
+                                    :disabled="validandoCupon || !cupon.codigo.trim()"
+                                    class="btn-rappi text-white text-sm font-semibold px-4 rounded-xl transition-colors disabled:opacity-50"
+                                >
+                                    <span x-show="!validandoCupon">Aplicar</span>
+                                    <span x-show="validandoCupon" class="flex items-center gap-1">
+                                        <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    </span>
+                                </button>
+                            </div>
+                            <p x-show="cupon.valido === false" class="text-xs text-red-500 mt-1.5 px-1" x-text="cupon.mensaje"></p>
+                        </div>
+                    </template>
+
+                    <template x-if="cupon.aplicado">
+                        <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                </svg>
+                                <div>
+                                    <p class="text-xs font-bold text-green-700 uppercase" x-text="cupon.codigo"></p>
+                                    <p class="text-xs text-green-600" x-text="cupon.mensaje"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-green-700" x-text="'-$' + formatNum(cupon.descuento)"></span>
+                                <button @click="quitarCupon()" class="text-gray-400 hover:text-red-400 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <div class="flex-shrink-0 border-t border-gray-100 px-4 py-4 bg-white">
@@ -546,6 +597,8 @@ function menuApp() {
         productoActual: {}, categoriaActual: {}, cantidad: 1,
         adicionalesProducto: [], seleccionAdicionales: {}, puedoAgregar: false,
         formaPagoSeleccionada: '',
+        cupon: { codigo: '', aplicado: false, descuento: 0, mensaje: '', valido: null },
+        validandoCupon: false,
         formasPago: [
             { valor: 'Efectivo', texto: 'Efectivo', icono: '💵', desc: 'Paga al recibir tu pedido' },
             { valor: 'Datafono', texto: 'Datáfono', icono: '💳', desc: 'Terminal en la entrega' },
@@ -558,7 +611,7 @@ function menuApp() {
             return this.menu.filter(c => String(c.comboid) === String(this.categoriaFiltro));
         },
         get totalCarrito() { return this.carrito.reduce((s, i) => s + i.total, 0); },
-        get totalConDomicilio() { return this.totalCarrito + parseInt(this.valorDomicilio); },
+        get totalConDomicilio() { return this.totalCarrito + parseInt(this.valorDomicilio) - this.cupon.descuento; },
         get subtotalActual() {
             const base = parseInt(this.productoActual.precio || 0) * this.cantidad;
             const adics = Object.values(this.seleccionAdicionales).reduce((s, id) => {
@@ -657,6 +710,40 @@ function menuApp() {
         quitarDelCarrito(idx) {
             this.carrito.splice(idx, 1);
             if (this.carrito.length === 0) this.modal = null;
+        },
+
+        async aplicarCupon() {
+            if (!this.cupon.codigo.trim()) return;
+            this.validandoCupon = true;
+            this.cupon.valido = null;
+            try {
+                const res = await this.apiPost('{{ route("api.cupon") }}', {
+                    code:   this.cupon.codigo.trim().toUpperCase(),
+                    amount: this.totalCarrito + parseInt(this.valorDomicilio),
+                    phone:  this.cliente.celular || '',
+                });
+                const data = await res.json();
+                if (data.valid) {
+                    this.cupon.aplicado  = true;
+                    this.cupon.valido    = true;
+                    this.cupon.descuento = data.discount_amount;
+                    this.cupon.mensaje   = data.message;
+                } else {
+                    this.cupon.valido   = false;
+                    this.cupon.mensaje  = data.message || 'Cupón no válido.';
+                    this.cupon.aplicado = false;
+                    this.cupon.descuento = 0;
+                }
+            } catch (e) {
+                this.cupon.valido  = false;
+                this.cupon.mensaje = 'Error al validar el cupón.';
+            } finally {
+                this.validandoCupon = false;
+            }
+        },
+
+        quitarCupon() {
+            this.cupon = { codigo: '', aplicado: false, descuento: 0, mensaje: '', valido: null };
         },
 
         async enviarPedido() {

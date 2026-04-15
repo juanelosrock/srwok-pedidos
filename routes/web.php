@@ -24,3 +24,4 @@ Route::post('/api/adiciones', [MenuController::class, 'adiciones'])->name('api.a
 // API — Pedidos
 Route::post('/api/pedido',        [OrderController::class, 'enviar'])->name('api.pedido');
 Route::post('/api/estado-pedido', [OrderController::class, 'estado'])->name('api.estado-pedido');
+Route::post('/api/cupon',         [OrderController::class, 'validarCupon'])->name('api.cupon');
