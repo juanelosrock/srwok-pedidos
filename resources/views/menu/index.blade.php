@@ -539,6 +539,23 @@
         </div>
     </div>
 
+    {{-- ===== MODAL: Debug XML ===== --}}
+    <div x-show="modal === 'debug_xml'" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div class="bg-white w-full max-w-2xl mx-auto rounded-2xl flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+                <h3 class="font-bold text-gray-900">XML generado (DEBUG)</h3>
+                <button @click="modal = null" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <pre class="text-xs text-gray-700 bg-gray-50 rounded-xl p-4 overflow-x-auto whitespace-pre" x-text="debugXml"></pre>
+            </div>
+        </div>
+    </div>
+
     {{-- ===== MODAL: Pedido confirmado ===== --}}
     <div x-show="modal === 'confirmado'" x-transition class="fixed inset-0 z-50 flex items-end bg-black/50">
         <div class="bg-white w-full max-w-2xl mx-auto rounded-t-3xl p-6">
@@ -598,7 +615,7 @@ function menuApp() {
         adicionalesProducto: [], seleccionAdicionales: {}, puedoAgregar: false,
         formaPagoSeleccionada: '',
         cupon: { codigo: '', aplicado: false, descuento: 0, porcentaje: 0, mensaje: '', valido: null },
-        validandoCupon: false,
+        validandoCupon: false, debugXml: '',
         formasPago: [
             { valor: 'Efectivo', texto: 'Efectivo', icono: '💵', desc: 'Paga al recibir tu pedido' },
             { valor: 'Datafono', texto: 'Datáfono', icono: '💳', desc: 'Terminal en la entrega' },
@@ -774,12 +791,15 @@ function menuApp() {
             };
             try {
                 const res = await this.apiPost('{{ route("api.pedido") }}', payload);
-                if (res.ok) {
+                const json = await res.json();
+                if (json._debug_xml) {
+                    this.debugXml = json._debug_xml;
+                    this.modal = 'debug_xml';
+                } else if (res.ok) {
                     this.carrito = []; this.modal = 'confirmado';
                     ['pedidos','contador','cantidades','totales','cabeceras','totalenpedido'].forEach(k => localStorage.removeItem(k));
                 } else {
-                    const err = await res.json();
-                    this.errorEnvio = err.message || 'Error al enviar el pedido.';
+                    this.errorEnvio = json.message || 'Error al enviar el pedido.';
                 }
             } catch (e) { this.errorEnvio = 'Error de conexión.'; }
             finally { this.enviando = false; }

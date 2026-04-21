@@ -54,19 +54,13 @@ class OrderController extends Controller
             'cupon_porcentaje' => $data['cupon_porcentaje'] ?? 'N/A',
         ]);
 
-        $ordenWeb = $this->construirOrdenXml(
+        $xml = $this->construirXmlString(
             $data, $tipoPago, $cabeceras, $pedidos, $cantidades, $totales,
             (float) ($data['cupon_porcentaje'] ?? 0)
         );
 
-        $respuesta = $this->sibco->enviarPedido($ordenWeb);
-
-        if (!empty($data['cupon_codigo'])) {
-            $orderId = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
-            $this->redimirCupon($data['cupon_codigo'], (int) $data['total'], $data['celular'], $orderId);
-        }
-
-        return response()->json($respuesta);
+        // DEBUG: retornar XML sin enviar a SIBCO
+        return response()->json(['_debug_xml' => $xml]);
     }
 
     public function validarCupon(Request $request): JsonResponse
@@ -194,5 +188,69 @@ class OrderController extends Controller
         $xml = $doc->saveXML();
         $obj = simplexml_load_string($xml);
         return json_decode(json_encode($obj), true);
+    }
+
+    private function construirXmlString(
+        array $data, string $tipoPago, array $cabeceras,
+        array $pedidos, array $cantidades, array $totales,
+        float $cuponPorcentaje = 0
+    ): string {
+        $doc = new \DOMDocument('1.0', 'UTF-8');
+        $doc->xmlStandalone = true;
+        $pedido = $doc->appendChild($doc->createElement('PEDIDO'));
+
+        $cliente = $pedido->appendChild($doc->createElement('CLIENTE'));
+        $cliente->appendChild($doc->createElement('NOMBRE',    $data['nombre']));
+        $cliente->appendChild($doc->createElement('APELLIDO',  '0'));
+        $cliente->appendChild($doc->createElement('CORREO',    $data['correo']));
+        $cliente->appendChild($doc->createElement('DIRECCION', $data['direccion']));
+        $cliente->appendChild($doc->createElement('CIUDAD',    $data['ciudad']));
+        $cliente->appendChild($doc->createElement('TELEFONO',  $data['celular']));
+        $cliente->appendChild($doc->createElement('DIRECCION2', $data['complemento'] ?? ''));
+        $cliente->appendChild($doc->createElement('FCM',       $data['fcm'] ?? ''));
+
+        $orden = $pedido->appendChild($doc->createElement('ORDEN'));
+        $orden->appendChild($doc->createElement('ID',       $data['contador']));
+        $orden->appendChild($doc->createElement('NUMORDEN', $data['contador']));
+        $orden->appendChild($doc->createElement('ZONA',     $data['pdv']));
+        $orden->appendChild($doc->createElement('CIUDAD',   $data['ciudad']));
+        $orden->appendChild($doc->createElement('FECHA',    now()->format('Y-m-d H:i:s')));
+        $orden->appendChild($doc->createElement('VALOR',    $data['total'] - $data['valordomicilio']));
+        $orden->appendChild($doc->createElement('RECARGO',  $data['valordomicilio']));
+        $orden->appendChild($doc->createElement('OBSERVACION', $data['nombre']));
+
+        $pago = $pedido->appendChild($doc->createElement('PAGO'));
+        $pago->appendChild($doc->createElement('TIPO',  $tipoPago));
+        $pago->appendChild($doc->createElement('VALOR', $data['total']));
+        if ($cuponPorcentaje > 0) {
+            $pago->appendChild($doc->createElement('DESCUENTO', $cuponPorcentaje));
+        }
+
+        for ($x = 0; $x < $data['contador']; $x++) {
+            $cab      = $cabeceras[$x];
+            $cantidad = $cantidades[$x]['cantidad'];
+            $pedItem  = $pedidos[$x];
+
+            $item = $pedido->appendChild($doc->createElement('ITEM'));
+            $item->appendChild($doc->createElement('ITEMCONSECUTIVO', $x));
+            $item->appendChild($doc->createElement('CODIGO',    $cab['codintegracion']));
+            $item->appendChild($doc->createElement('PRODUCTO',  $cab['nombre']));
+            $item->appendChild($doc->createElement('CANTIDAD',  $cantidad));
+            $item->appendChild($doc->createElement('VALOR',     $cab['precio']));
+
+            foreach ($pedItem as $grupo) {
+                for ($j = 0; $j < count($grupo); $j++) {
+                    $sub = $item->appendChild($doc->createElement('SUBITEM'));
+                    $sub->appendChild($doc->createElement('ITEMCONSECUTIVO', $x));
+                    $sub->appendChild($doc->createElement('CODIGO',   $grupo[$j]['codintegracion']));
+                    $sub->appendChild($doc->createElement('PRODUCTO', $grupo[$j]['nombre']));
+                    $sub->appendChild($doc->createElement('CANTIDAD', $cantidad));
+                    $sub->appendChild($doc->createElement('VALOR',    $grupo[$j]['precio']));
+                }
+            }
+        }
+
+        $doc->formatOutput = true;
+        return $doc->saveXML();
     }
 }
