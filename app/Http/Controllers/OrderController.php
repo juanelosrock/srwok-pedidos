@@ -48,7 +48,8 @@ class OrderController extends Controller
         $totales    = json_decode($data['totales'], true);
 
         $ordenWeb = $this->construirOrdenXml(
-            $data, $tipoPago, $cabeceras, $pedidos, $cantidades, $totales
+            $data, $tipoPago, $cabeceras, $pedidos, $cantidades, $totales,
+            (float) ($data['cupon_descuento'] ?? 0)
         );
 
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
@@ -119,7 +120,8 @@ class OrderController extends Controller
         array $cabeceras,
         array $pedidos,
         array $cantidades,
-        array $totales
+        array $totales,
+        float $cuponDescuento = 0
     ): array {
         $doc = new \DOMDocument('1.0', 'UTF-8');
         $doc->xmlStandalone = true;
@@ -152,6 +154,11 @@ class OrderController extends Controller
         $pago = $pedido->appendChild($doc->createElement('PAGO'));
         $pago->appendChild($doc->createElement('TIPO',  $tipoPago));
         $pago->appendChild($doc->createElement('VALOR', $data['total']));
+        if ($cuponDescuento > 0) {
+            $totalOriginal = $data['total'] + $cuponDescuento;
+            $porcentaje    = $cuponDescuento / $totalOriginal * 100;
+            $pago->appendChild($doc->createElement('DESCUENTO', $porcentaje));
+        }
 
         // Items
         for ($x = 0; $x < $data['contador']; $x++) {
@@ -176,6 +183,24 @@ class OrderController extends Controller
                     $sub->appendChild($doc->createElement('VALOR',    $grupo[$j]['precio']));
                 }
             }
+        }
+
+        // Item de descuento por cupón
+        if ($cuponDescuento > 0) {
+            $idx  = $data['contador'];
+            $item = $pedido->appendChild($doc->createElement('ITEM'));
+            $item->appendChild($doc->createElement('ITEMCONSECUTIVO', $idx));
+            $item->appendChild($doc->createElement('CODIGO',   'ADICIONALES'));
+            $item->appendChild($doc->createElement('PRODUCTO', 'DESCUENTO_MARCA'));
+            $item->appendChild($doc->createElement('CANTIDAD', (int) $cuponDescuento));
+            $item->appendChild($doc->createElement('VALOR',    '0'));
+
+            $sub = $item->appendChild($doc->createElement('SUBITEM'));
+            $sub->appendChild($doc->createElement('ITEMCONSECUTIVO', $idx));
+            $sub->appendChild($doc->createElement('CODIGO',   '13480'));
+            $sub->appendChild($doc->createElement('PRODUCTO', 'DESCUENTO_MARCA'));
+            $sub->appendChild($doc->createElement('CANTIDAD', (int) $cuponDescuento));
+            $sub->appendChild($doc->createElement('VALOR',    '0'));
         }
 
         $doc->formatOutput = true;
