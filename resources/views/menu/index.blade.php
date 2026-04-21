@@ -597,7 +597,7 @@ function menuApp() {
         productoActual: {}, categoriaActual: {}, cantidad: 1,
         adicionalesProducto: [], seleccionAdicionales: {}, puedoAgregar: false,
         formaPagoSeleccionada: '',
-        cupon: { codigo: '', aplicado: false, descuento: 0, mensaje: '', valido: null },
+        cupon: { codigo: '', aplicado: false, descuento: 0, porcentaje: 0, mensaje: '', valido: null },
         validandoCupon: false,
         formasPago: [
             { valor: 'Efectivo', texto: 'Efectivo', icono: '💵', desc: 'Paga al recibir tu pedido' },
@@ -724,10 +724,11 @@ function menuApp() {
                 });
                 const data = await res.json();
                 if (data.valid) {
-                    this.cupon.aplicado  = true;
-                    this.cupon.valido    = true;
-                    this.cupon.descuento = data.discount_amount;
-                    this.cupon.mensaje   = data.message;
+                    this.cupon.aplicado   = true;
+                    this.cupon.valido     = true;
+                    this.cupon.descuento  = data.discount_amount;
+                    this.cupon.porcentaje = data.discount_value;
+                    this.cupon.mensaje    = data.message;
                 } else {
                     this.cupon.valido   = false;
                     this.cupon.mensaje  = data.message || 'Cupón no válido.';
@@ -759,8 +760,9 @@ function menuApp() {
                 totales: JSON.stringify(this.carrito.map(i => ({ total: i.total }))),
                 contador: this.carrito.length, total: this.totalConDomicilio,
                 valordomicilio: this.valorDomicilio, fcm: localStorage.getItem('fcm') || '',
-                cupon_codigo:   this.cupon.aplicado ? this.cupon.codigo : '',
-                cupon_descuento: this.cupon.aplicado ? this.cupon.descuento : 0,
+                cupon_codigo:     this.cupon.aplicado ? this.cupon.codigo : '',
+                cupon_descuento:  this.cupon.aplicado ? this.cupon.descuento : 0,
+                cupon_porcentaje: this.cupon.aplicado ? this.cupon.porcentaje : 0,
             };
             try {
                 const res = await this.apiPost('{{ route("api.pedido") }}', payload);

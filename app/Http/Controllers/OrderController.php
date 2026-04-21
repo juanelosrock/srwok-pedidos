@@ -30,8 +30,9 @@ class OrderController extends Controller
             'total'         => ['required', 'numeric'],
             'valordomicilio'=> ['required', 'numeric'],
             'fcm'           => ['nullable', 'string'],
-            'cupon_codigo'  => ['nullable', 'string'],
-            'cupon_descuento' => ['nullable', 'numeric'],
+            'cupon_codigo'     => ['nullable', 'string'],
+            'cupon_descuento'  => ['nullable', 'numeric'],
+            'cupon_porcentaje' => ['nullable', 'numeric'],
         ]);
 
         $tiposPago = [
@@ -48,7 +49,8 @@ class OrderController extends Controller
         $totales    = json_decode($data['totales'], true);
 
         $ordenWeb = $this->construirOrdenXml(
-            $data, $tipoPago, $cabeceras, $pedidos, $cantidades, $totales
+            $data, $tipoPago, $cabeceras, $pedidos, $cantidades, $totales,
+            (float) ($data['cupon_porcentaje'] ?? 0)
         );
 
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
@@ -119,7 +121,8 @@ class OrderController extends Controller
         array $cabeceras,
         array $pedidos,
         array $cantidades,
-        array $totales
+        array $totales,
+        float $cuponPorcentaje = 0
     ): array {
         $doc = new \DOMDocument('1.0', 'UTF-8');
         $doc->xmlStandalone = true;
@@ -152,6 +155,9 @@ class OrderController extends Controller
         $pago = $pedido->appendChild($doc->createElement('PAGO'));
         $pago->appendChild($doc->createElement('TIPO',  $tipoPago));
         $pago->appendChild($doc->createElement('VALOR', $data['total']));
+        if ($cuponPorcentaje > 0) {
+            $pago->appendChild($doc->createElement('DESCUENTO', $cuponPorcentaje));
+        }
 
         // Items
         for ($x = 0; $x < $data['contador']; $x++) {
