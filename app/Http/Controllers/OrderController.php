@@ -48,6 +48,12 @@ class OrderController extends Controller
         $cantidades = json_decode($data['cantidades'], true);
         $totales    = json_decode($data['totales'], true);
 
+        \Log::info('CUPON_DEBUG', [
+            'cupon_codigo'     => $data['cupon_codigo'] ?? 'N/A',
+            'cupon_descuento'  => $data['cupon_descuento'] ?? 'N/A',
+            'cupon_porcentaje' => $data['cupon_porcentaje'] ?? 'N/A',
+        ]);
+
         $ordenWeb = $this->construirOrdenXml(
             $data, $tipoPago, $cabeceras, $pedidos, $cantidades, $totales,
             (float) ($data['cupon_porcentaje'] ?? 0)
