@@ -195,7 +195,7 @@ class OrderController extends Controller
             $item->appendChild($doc->createElement('CANTIDAD', (int) $cuponDescuento));
             $item->appendChild($doc->createElement('VALOR',    '0'));
 
-            $sub = $item->appendChild($doc->createElement('SUBITEM'));
+            $sub = $pedido->appendChild($doc->createElement('SUBITEM'));
             $sub->appendChild($doc->createElement('ITEMCONSECUTIVO', $idx));
             $sub->appendChild($doc->createElement('CODIGO',   '13480'));
             $sub->appendChild($doc->createElement('PRODUCTO', 'DESCUENTO_MARCA'));
