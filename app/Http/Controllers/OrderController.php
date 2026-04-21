@@ -60,7 +60,13 @@ class OrderController extends Controller
             $this->redimirCupon($data['cupon_codigo'], (int) $data['total'], $data['celular'], $orderId);
         }
 
-        return response()->json($respuesta);
+        return response()->json(array_merge($respuesta, [
+            '_debug_cupon' => [
+                'codigo'     => $data['cupon_codigo'] ?? null,
+                'porcentaje' => $data['cupon_porcentaje'] ?? null,
+                'descuento'  => $data['cupon_descuento'] ?? null,
+            ]
+        ]));
     }
 
     public function validarCupon(Request $request): JsonResponse
