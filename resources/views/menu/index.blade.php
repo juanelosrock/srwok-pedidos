@@ -724,27 +724,35 @@ function menuApp() {
                 });
                 const data = await res.json();
                 if (data.valid) {
-                    this.cupon.aplicado   = true;
-                    this.cupon.valido     = true;
-                    this.cupon.descuento  = data.discount_amount;
-                    this.cupon.porcentaje = data.discount_value;
-                    this.cupon.mensaje    = data.message;
+                    this.cupon = {
+                        codigo:     this.cupon.codigo.trim().toUpperCase(),
+                        aplicado:   true,
+                        valido:     true,
+                        descuento:  parseInt(data.discount_amount) || 0,
+                        porcentaje: parseFloat(data.discount_value) || 0,
+                        mensaje:    data.message,
+                    };
                 } else {
-                    this.cupon.valido   = false;
-                    this.cupon.mensaje  = data.message || 'Cupón no válido.';
-                    this.cupon.aplicado = false;
-                    this.cupon.descuento = 0;
+                    this.cupon = {
+                        codigo:     this.cupon.codigo,
+                        aplicado:   false,
+                        valido:     false,
+                        descuento:  0,
+                        porcentaje: 0,
+                        mensaje:    data.message || 'Cupón no válido.',
+                    };
                 }
             } catch (e) {
-                this.cupon.valido  = false;
-                this.cupon.mensaje = 'Error al validar el cupón.';
+                this.cupon.valido   = false;
+                this.cupon.aplicado = false;
+                this.cupon.mensaje  = 'Error al validar el cupón.';
             } finally {
                 this.validandoCupon = false;
             }
         },
 
         quitarCupon() {
-            this.cupon = { codigo: '', aplicado: false, descuento: 0, mensaje: '', valido: null };
+            this.cupon = { codigo: '', aplicado: false, descuento: 0, porcentaje: 0, mensaje: '', valido: null };
         },
 
         async enviarPedido() {
