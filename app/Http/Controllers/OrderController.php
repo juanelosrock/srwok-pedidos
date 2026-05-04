@@ -187,7 +187,7 @@ class OrderController extends Controller
         $doc->formatOutput = true;
         $xml = $doc->saveXML();
 
-        \Storage::disk('local')->put('logs/pedido_xml_' . now()->format('YmdHis') . '.xml', $xml);
+        file_put_contents(storage_path('logs/pedido_xml_' . now()->format('YmdHis') . '.xml'), $xml);
 
         $obj = simplexml_load_string($xml);
         return json_decode(json_encode($obj), true);
