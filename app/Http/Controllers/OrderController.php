@@ -56,8 +56,9 @@ class OrderController extends Controller
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
 
         if (!empty($data['cupon_codigo'])) {
-            $orderId = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
-            $this->redimirCupon($data['cupon_codigo'], (int) $data['total'], $data['celular'], $orderId);
+            $orderId        = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
+            $montoOriginal  = (int) $data['total'] + (int) ($data['cupon_descuento'] ?? 0);
+            $this->redimirCupon($data['cupon_codigo'], $montoOriginal, $data['celular'], $orderId);
         }
 
         return response()->json($respuesta);
