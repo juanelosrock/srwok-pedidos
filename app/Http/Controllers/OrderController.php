@@ -55,10 +55,15 @@ class OrderController extends Controller
 
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
 
+        $cuponError = null;
         if (!empty($data['cupon_codigo'])) {
-            $orderId        = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
-            $montoOriginal  = (int) $data['total'] + (int) ($data['cupon_descuento'] ?? 0);
-            $this->redimirCupon($data['cupon_codigo'], $montoOriginal, $data['celular'], $orderId);
+            $orderId       = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
+            $montoOriginal = (int) $data['total'] + (int) ($data['cupon_descuento'] ?? 0);
+            $cuponError    = $this->redimirCupon($data['cupon_codigo'], $montoOriginal, $data['celular'], $orderId);
+        }
+
+        if ($cuponError) {
+            $respuesta['cupon_error'] = $cuponError;
         }
 
         return response()->json($respuesta);
@@ -86,10 +91,10 @@ class OrderController extends Controller
         return response()->json($response->json(), $response->status());
     }
 
-    private function redimirCupon(string $code, int $amount, string $phone, string $orderId): void
+    private function redimirCupon(string $code, int $amount, string $phone, string $orderId): ?string
     {
         try {
-            Http::withHeaders([
+            $response = Http::withHeaders([
                 'Content-Type'    => 'application/json',
                 'Accept'          => 'application/json',
                 'X-Client-Id'     => config('cupones.client_id'),
@@ -104,8 +109,15 @@ class OrderController extends Controller
                     'order_id' => $orderId,
                 ]
             );
+
+            $json = $response->json();
+            if (!($json['valid'] ?? false)) {
+                return $json['message'] ?? 'No fue posible redimir el cupón.';
+            }
+
+            return null;
         } catch (\Throwable) {
-            // Si falla la redención no bloqueamos el pedido, queda registrado en logs
+            return 'Error al conectar con el servicio de cupones.';
         }
     }
 

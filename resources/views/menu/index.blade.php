@@ -552,6 +552,18 @@
                 <p class="text-gray-400 text-sm mt-2">Tu orden está en camino. Tiempo estimado: <span class="font-semibold text-gray-700" x-text="(tienda.tiempoEntrega || '30-45') + ' min'"></span></p>
             </div>
 
+            <template x-if="cuponError">
+                <div class="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-4">
+                    <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-yellow-800">Problema con el cupón</p>
+                        <p class="text-xs text-yellow-700 mt-0.5" x-text="cuponError"></p>
+                    </div>
+                </div>
+            </template>
+
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 text-center">¿Preguntas? Llámanos</p>
             <div class="grid grid-cols-2 gap-2 mb-5">
                 @foreach([['Armenia','6067359868'],['Bogotá','6017444424'],['Cali','6026959570'],['Ibagué','6082771250'],['Manizales','6068918899'],['Medellín','6046044949'],['Palmira','6022868970'],['Pereira','6063400551'],['Popayán','6028368090'],['Tuluá','6022359880']] as [$c,$t])
@@ -598,7 +610,7 @@ function menuApp() {
         adicionalesProducto: [], seleccionAdicionales: {}, puedoAgregar: false,
         formaPagoSeleccionada: '',
         cupon: { codigo: '', aplicado: false, descuento: 0, porcentaje: 0, mensaje: '', valido: null },
-        validandoCupon: false,
+        validandoCupon: false, cuponError: '',
         formasPago: [
             { valor: 'Efectivo', texto: 'Efectivo', icono: '💵', desc: 'Paga al recibir tu pedido' },
             { valor: 'Datafono', texto: 'Datáfono', icono: '💳', desc: 'Terminal en la entrega' },
@@ -775,6 +787,8 @@ function menuApp() {
             try {
                 const res = await this.apiPost('{{ route("api.pedido") }}', payload);
                 if (res.ok) {
+                    const json = await res.json();
+                    this.cuponError = json.cupon_error || '';
                     this.carrito = []; this.modal = 'confirmado';
                     ['pedidos','contador','cantidades','totales','cabeceras','totalenpedido'].forEach(k => localStorage.removeItem(k));
                 } else {
