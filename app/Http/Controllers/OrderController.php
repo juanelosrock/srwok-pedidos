@@ -56,6 +56,8 @@ class OrderController extends Controller
 
         $respuesta = $this->sibco->enviarPedido($ordenWeb);
 
+        $this->registrarCliente($data);
+
         $cuponError = null;
         if (!empty($data['cupon_codigo'])) {
             $orderId       = 'ORD-' . now()->format('YmdHis') . '-' . $data['pdv'];
@@ -66,8 +68,6 @@ class OrderController extends Controller
         if ($cuponError) {
             $respuesta['cupon_error'] = $cuponError;
         }
-
-        $this->registrarCliente($data);
 
         return response()->json($respuesta);
     }
