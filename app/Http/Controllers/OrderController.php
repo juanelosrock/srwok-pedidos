@@ -139,6 +139,7 @@ class OrderController extends Controller
             'phone'           => $data['celular'],
             'email'           => $data['correo'],
             'city_name'       => $data['nombreciudad'] ?? '',
+            'department'      => 'Colombia',
             'document_type'   => 'CC',
             'document_number' => $data['celular'],
             'accept_terms'    => true,
