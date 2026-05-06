@@ -142,6 +142,7 @@ class OrderController extends Controller
             'document_type'   => 'CC',
             'document_number' => $data['celular'],
             'accept_terms'    => true,
+            'accept_privacy'  => true,
             'accept_sms'      => true,
         ];
 
