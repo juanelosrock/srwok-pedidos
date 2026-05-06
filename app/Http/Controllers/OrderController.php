@@ -126,36 +126,52 @@ class OrderController extends Controller
 
     private function registrarCliente(array $data): void
     {
+        $baseUrl  = str_replace('/validate', '', config('cupones.url'));
+        $headers  = [
+            'Content-Type'    => 'application/json',
+            'Accept'          => 'application/json',
+            'X-Client-Id'     => config('cupones.client_id'),
+            'X-Client-Secret' => config('cupones.client_secret'),
+        ];
+
+        $payload = [
+            'name'            => $data['nombre'],
+            'phone'           => $data['celular'],
+            'email'           => $data['correo'],
+            'city_name'       => $data['nombreciudad'] ?? '',
+            'document_type'   => 'CC',
+            'document_number' => $data['celular'],
+            'accept_terms'    => true,
+            'accept_sms'      => true,
+        ];
+
+        \Log::info('[CUPONES] register URL: ' . $baseUrl . '/customers/register');
+        \Log::info('[CUPONES] register payload: ' . json_encode($payload));
+        \Log::info('[CUPONES] headers client_id: ' . config('cupones.client_id'));
+
         try {
-            $baseUrl  = str_replace('/validate', '', config('cupones.url'));
-            $headers  = [
-                'Content-Type'    => 'application/json',
-                'Accept'          => 'application/json',
-                'X-Client-Id'     => config('cupones.client_id'),
-                'X-Client-Secret' => config('cupones.client_secret'),
-            ];
+            $response = Http::withHeaders($headers)->post($baseUrl . '/customers/register', $payload);
 
-            $response = Http::withHeaders($headers)->post($baseUrl . '/customers/register', [
-                'name'            => $data['nombre'],
-                'phone'           => $data['celular'],
-                'email'           => $data['correo'],
-                'city_name'       => $data['nombreciudad'] ?? '',
-                'document_type'   => 'CC',
-                'document_number' => $data['celular'],
-                'accept_terms'    => true,
-                'accept_sms'      => true,
-            ]);
+            \Log::info('[CUPONES] register status: ' . $response->status());
+            \Log::info('[CUPONES] register response: ' . $response->body());
 
-            $json = $response->json();
+            $json  = $response->json();
             $phone = $json['data']['phone'] ?? $data['celular'];
 
-            Http::withHeaders($headers)->post($baseUrl . '/customers/accept-terms', [
+            $termsPayload = [
                 'phone'          => $phone,
                 'document_types' => ['terms', 'privacy'],
                 'channel'        => 'api',
-            ]);
-        } catch (\Throwable) {
-            // fire-and-forget: no bloquear el pedido
+            ];
+
+            \Log::info('[CUPONES] accept-terms payload: ' . json_encode($termsPayload));
+
+            $termsResponse = Http::withHeaders($headers)->post($baseUrl . '/customers/accept-terms', $termsPayload);
+
+            \Log::info('[CUPONES] accept-terms status: ' . $termsResponse->status());
+            \Log::info('[CUPONES] accept-terms response: ' . $termsResponse->body());
+        } catch (\Throwable $e) {
+            \Log::error('[CUPONES] registrarCliente exception: ' . $e->getMessage());
         }
     }
 
