@@ -126,7 +126,7 @@ class OrderController extends Controller
 
     private function registrarCliente(array $data): void
     {
-        $baseUrl  = str_replace('/validate', '', config('cupones.url'));
+        $baseUrl  = str_replace('/coupons/validate', '', config('cupones.url'));
         $headers  = [
             'Content-Type'    => 'application/json',
             'Accept'          => 'application/json',
