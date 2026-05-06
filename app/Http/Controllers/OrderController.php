@@ -33,6 +33,7 @@ class OrderController extends Controller
             'cupon_codigo'     => ['nullable', 'string'],
             'cupon_descuento'  => ['nullable', 'numeric'],
             'cupon_porcentaje' => ['nullable', 'numeric'],
+            'nombreciudad'     => ['nullable', 'string'],
         ]);
 
         $tiposPago = [
@@ -65,6 +66,8 @@ class OrderController extends Controller
         if ($cuponError) {
             $respuesta['cupon_error'] = $cuponError;
         }
+
+        $this->registrarCliente($data);
 
         return response()->json($respuesta);
     }
@@ -118,6 +121,41 @@ class OrderController extends Controller
             return null;
         } catch (\Throwable) {
             return 'Error al conectar con el servicio de cupones.';
+        }
+    }
+
+    private function registrarCliente(array $data): void
+    {
+        try {
+            $baseUrl  = str_replace('/validate', '', config('cupones.url'));
+            $headers  = [
+                'Content-Type'    => 'application/json',
+                'Accept'          => 'application/json',
+                'X-Client-Id'     => config('cupones.client_id'),
+                'X-Client-Secret' => config('cupones.client_secret'),
+            ];
+
+            $response = Http::withHeaders($headers)->post($baseUrl . '/customers/register', [
+                'name'            => $data['nombre'],
+                'phone'           => $data['celular'],
+                'email'           => $data['correo'],
+                'city_name'       => $data['nombreciudad'] ?? '',
+                'document_type'   => 'CC',
+                'document_number' => $data['celular'],
+                'accept_terms'    => true,
+                'accept_sms'      => true,
+            ]);
+
+            $json = $response->json();
+            $phone = $json['data']['phone'] ?? $data['celular'];
+
+            Http::withHeaders($headers)->post($baseUrl . '/customers/accept-terms', [
+                'phone'          => $phone,
+                'document_types' => ['terms', 'privacy'],
+                'channel'        => 'api',
+            ]);
+        } catch (\Throwable) {
+            // fire-and-forget: no bloquear el pedido
         }
     }
 
