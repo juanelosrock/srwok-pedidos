@@ -133,7 +133,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="grid grid-cols-2 gap-3 mb-3">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1.5 font-medium">Orientación</label>
                         <select x-model="dir.orient2" @change="actualizarPreview()" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 bg-white">
@@ -146,6 +146,12 @@
                         <label class="block text-xs text-gray-400 mb-1.5 font-medium">Núm. casa</label>
                         <input x-model="dir.num3" @input="validarCampoDir($event); actualizarPreview()" type="text" maxlength="6" placeholder="Ej: 45" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700"/>
                     </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-xs text-gray-400 mb-1.5 font-medium">Complemento <span class="text-gray-300">(opcional)</span></label>
+                    <input x-model="complemento" type="text" placeholder="Apto 301, Conjunto Los Pinos, Torre B..."
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700"/>
                 </div>
 
                 <p x-show="errorDir" class="text-red-500 text-xs mb-3 px-1" x-text="errorDir"></p>
@@ -202,6 +208,7 @@ function homeApp() {
         paso: 'ciudad', ciudades: [], cargandoCiudades: true,
         ciudadSeleccionada: '', nombreCiudad: '', errorCiudad: '',
         dir: { tipo: '', num1: '', orient1: '', num2: '', orient2: '', num3: '' },
+        complemento: '',
         direccionPreview: '', buscando: false, sinCobertura: false, errorDir: '',
 
         async cargarCiudades() {
@@ -257,6 +264,7 @@ function homeApp() {
                     localStorage.setItem('ciudad', this.ciudadSeleccionada);
                     localStorage.setItem('nombreciudad', this.nombreCiudad);
                     localStorage.setItem('direccion', direccion);
+                    localStorage.setItem('complemento', this.complemento.trim());
                     window.location.href = '{{ route("menu") }}';
                 }
             } catch (e) {
