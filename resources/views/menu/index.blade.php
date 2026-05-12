@@ -615,7 +615,7 @@ function menuApp() {
             { valor: 'Efectivo', texto: 'Efectivo', icono: '💵', desc: 'Paga al recibir tu pedido' },
             { valor: 'Datafono', texto: 'Datáfono', icono: '💳', desc: 'Terminal en la entrega' },
         ],
-        cliente: { nombre: '', correo: '', celular: '', complemento: '' },
+        cliente: { nombre: '', correo: '', celular: '', complemento: localStorage.getItem('complemento') || '' },
         clienteValido: false, enviando: false, errorEnvio: '',
 
         get menuFiltrado() {
