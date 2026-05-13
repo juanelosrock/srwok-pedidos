@@ -224,23 +224,23 @@
                                 <div class="flex items-center justify-between mb-3">
                                     <div>
                                         <h4 class="font-bold text-gray-900 text-sm" x-text="grupo.nombrecat"></h4>
-                                        <p class="text-xs text-gray-400 mt-0.5" x-text="parseInt(grupo.maximo) > 1 ? 'Elige varias opciones' : 'Elige 1 opción'"></p>
+                                        <p class="text-xs text-gray-400 mt-0.5" x-text="parseInt(grupo.tipo) === 2 ? 'Elige varias opciones' : 'Elige 1 opción'"></p>
                                     </div>
                                     <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                                        :class="parseInt(grupo.maximo) > 1 ? 'bg-blue-50 text-blue-600' : 'bg-[#FFEBEE] brand-text'"
-                                        x-text="parseInt(grupo.maximo) > 1 ? 'Opcional' : 'Requerido'"
+                                        :class="parseInt(grupo.tipo) === 2 ? 'bg-blue-50 text-blue-600' : 'bg-[#FFEBEE] brand-text'"
+                                        x-text="parseInt(grupo.tipo) === 2 ? 'Opcional' : 'Requerido'"
                                     ></span>
                                 </div>
                                 <div class="space-y-2">
                                     <template x-for="adic in grupo.adicionales" :key="adic.adicionalesid">
                                         <label class="flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all"
                                             :class="isSelected(grupo, adic) ? 'brand-border bg-[#FFEBEE]' : 'border-gray-100 hover:border-gray-200'"
-                                            @click="if (parseInt(grupo.maximo) > 1) toggleCheckbox(grupo.idcategoria, adic.adicionalesid)"
+                                            @click="if (parseInt(grupo.tipo) === 2) toggleCheckbox(grupo.idcategoria, adic.adicionalesid)"
                                         >
                                             <div class="flex items-center gap-3">
                                                 <div class="w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all"
                                                     :class="[
-                                                        parseInt(grupo.maximo) > 1 ? 'rounded-md' : 'rounded-full',
+                                                        parseInt(grupo.tipo) === 2 ? 'rounded-md' : 'rounded-full',
                                                         isSelected(grupo, adic) ? 'brand-border bg-[#C62828]' : 'border-gray-300'
                                                     ]"
                                                 >
@@ -254,7 +254,7 @@
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <span x-show="parseInt(adic.precio) > 0" class="text-xs font-semibold text-gray-500" x-text="'+$' + formatNum(adic.precio)"></span>
-                                                <template x-if="parseInt(grupo.maximo) === 1">
+                                                <template x-if="parseInt(grupo.tipo) === 1">
                                                     <input type="radio"
                                                         :name="'grupo-' + grupo.idcategoria"
                                                         :value="adic.adicionalesid"
@@ -686,14 +686,14 @@ function menuApp() {
                 const adicionales = await res.json();
                 this.adicionalesProducto = adicionales;
                 const sel = {};
-                adicionales.forEach(g => { sel[g.idcategoria] = parseInt(g.maximo) > 1 ? [] : ''; });
+                adicionales.forEach(g => { sel[g.idcategoria] = parseInt(g.tipo) === 2 ? [] : ''; });
                 this.seleccionAdicionales = sel;
                 if (adicionales.length === 0) this.puedoAgregar = true;
             } finally { this.cargandoAdicionales = false; }
         },
 
         isSelected(grupo, adic) {
-            if (parseInt(grupo.maximo) > 1) {
+            if (parseInt(grupo.tipo) === 2) {
                 return (this.seleccionAdicionales[grupo.idcategoria] || []).includes(String(adic.adicionalesid));
             }
             return String(this.seleccionAdicionales[grupo.idcategoria]) === String(adic.adicionalesid);
@@ -709,7 +709,7 @@ function menuApp() {
         },
 
         verificarAdicionales() {
-            const requeridos = this.adicionalesProducto.filter(g => parseInt(g.maximo) === 1);
+            const requeridos = this.adicionalesProducto.filter(g => parseInt(g.tipo) === 1);
             const completados = requeridos.filter(g => this.seleccionAdicionales[g.idcategoria] !== '').length;
             this.puedoAgregar = completados >= requeridos.length;
         },
