@@ -224,24 +224,27 @@
                                 <div class="flex items-center justify-between mb-3">
                                     <div>
                                         <h4 class="font-bold text-gray-900 text-sm" x-text="grupo.nombrecat"></h4>
-                                        <p class="text-xs text-gray-400 mt-0.5">Elige 1 opción</p>
+                                        <p class="text-xs text-gray-400 mt-0.5" x-text="parseInt(grupo.tipo) === 2 ? 'Elige varias opciones' : 'Elige 1 opción'"></p>
                                     </div>
-                                    <span class="text-xs font-semibold bg-[#FFEBEE] brand-text px-2.5 py-1 rounded-full">Requerido</span>
+                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                                        :class="parseInt(grupo.tipo) === 2 ? 'bg-blue-50 text-blue-600' : 'bg-[#FFEBEE] brand-text'"
+                                        x-text="parseInt(grupo.tipo) === 2 ? 'Opcional' : 'Requerido'"
+                                    ></span>
                                 </div>
                                 <div class="space-y-2">
                                     <template x-for="adic in grupo.adicionales" :key="adic.adicionalesid">
                                         <label class="flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all"
-                                            :class="seleccionAdicionales[grupo.idcategoria] == adic.adicionalesid
-                                                ? 'brand-border bg-[#FFEBEE]'
-                                                : 'border-gray-100 hover:border-gray-200'"
+                                            :class="isSelected(grupo, adic) ? 'brand-border bg-[#FFEBEE]' : 'border-gray-100 hover:border-gray-200'"
+                                            @click="parseInt(grupo.tipo) === 2 && toggleCheckbox(grupo.idcategoria, adic.adicionalesid)"
                                         >
                                             <div class="flex items-center gap-3">
-                                                <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                                    :class="seleccionAdicionales[grupo.idcategoria] == adic.adicionalesid
-                                                        ? 'brand-border bg-[#C62828]'
-                                                        : 'border-gray-300'"
+                                                <div class="w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                                    :class="[
+                                                        parseInt(grupo.tipo) === 2 ? 'rounded-md' : 'rounded-full',
+                                                        isSelected(grupo, adic) ? 'brand-border bg-[#C62828]' : 'border-gray-300'
+                                                    ]"
                                                 >
-                                                    <template x-if="seleccionAdicionales[grupo.idcategoria] == adic.adicionalesid">
+                                                    <template x-if="isSelected(grupo, adic)">
                                                         <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/>
                                                         </svg>
@@ -251,13 +254,15 @@
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <span x-show="parseInt(adic.precio) > 0" class="text-xs font-semibold text-gray-500" x-text="'+$' + formatNum(adic.precio)"></span>
-                                                <input type="radio"
-                                                    :name="'grupo-' + grupo.idcategoria"
-                                                    :value="adic.adicionalesid"
-                                                    x-model="seleccionAdicionales[grupo.idcategoria]"
-                                                    @change="verificarAdicionales(); avanzarGrupo(grupo.idcategoria)"
-                                                    class="sr-only"
-                                                />
+                                                <template x-if="parseInt(grupo.tipo) !== 2">
+                                                    <input type="radio"
+                                                        :name="'grupo-' + grupo.idcategoria"
+                                                        :value="adic.adicionalesid"
+                                                        x-model="seleccionAdicionales[grupo.idcategoria]"
+                                                        @change="verificarAdicionales(); avanzarGrupo(grupo.idcategoria)"
+                                                        class="sr-only"
+                                                    />
+                                                </template>
                                             </div>
                                         </label>
                                     </template>
@@ -680,14 +685,33 @@ function menuApp() {
                 const res = await this.apiPost('{{ route("api.producto") }}', { producto: prod.id });
                 const adicionales = await res.json();
                 this.adicionalesProducto = adicionales;
+                const sel = {};
+                adicionales.forEach(g => { sel[g.idcategoria] = parseInt(g.tipo) === 2 ? [] : ''; });
+                this.seleccionAdicionales = sel;
                 if (adicionales.length === 0) this.puedoAgregar = true;
             } finally { this.cargandoAdicionales = false; }
         },
 
+        isSelected(grupo, adic) {
+            if (parseInt(grupo.tipo) === 2) {
+                return (this.seleccionAdicionales[grupo.idcategoria] || []).includes(String(adic.adicionalesid));
+            }
+            return String(this.seleccionAdicionales[grupo.idcategoria]) === String(adic.adicionalesid);
+        },
+
+        toggleCheckbox(idcategoria, adicionalesid) {
+            const current = [...(this.seleccionAdicionales[idcategoria] || [])];
+            const id = String(adicionalesid);
+            const idx = current.indexOf(id);
+            if (idx === -1) current.push(id); else current.splice(idx, 1);
+            this.seleccionAdicionales[idcategoria] = current;
+            this.verificarAdicionales();
+        },
+
         verificarAdicionales() {
-            const requeridos = this.adicionalesProducto.length;
-            const completados = Object.values(this.seleccionAdicionales).filter(v => v !== '').length;
-            this.puedoAgregar = completados >= requeridos;
+            const requeridos = this.adicionalesProducto.filter(g => parseInt(g.tipo) !== 2);
+            const completados = requeridos.filter(g => this.seleccionAdicionales[g.idcategoria] !== '').length;
+            this.puedoAgregar = completados >= requeridos.length;
         },
 
         avanzarGrupo(idcategoria) {
@@ -708,9 +732,10 @@ function menuApp() {
                 codintegracion: this.productoActual.id, nombre: this.productoActual.nombre, precio: this.productoActual.precio
             };
             const adicionales = Object.entries(this.seleccionAdicionales)
-                .filter(([,v]) => v !== '')
-                .map(([,id]) => adicionesBase.find(a => String(a.ID) === String(id)))
-                .filter(Boolean);
+                .flatMap(([, val]) => {
+                    const ids = Array.isArray(val) ? val : (val !== '' ? [String(val)] : []);
+                    return ids.map(id => adicionesBase.find(a => String(a.ID) === String(id))).filter(Boolean);
+                });
             const totalAdics = adicionales.reduce((s, a) => s + parseInt(a.precio || 0), 0);
             const total = (parseInt(combo.precio || 0) + totalAdics) * this.cantidad;
             const catKey = this.categoriaActual.combo || 'combos';
