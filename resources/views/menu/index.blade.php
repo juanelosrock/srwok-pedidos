@@ -235,7 +235,7 @@
                                     <template x-for="adic in grupo.adicionales" :key="adic.adicionalesid">
                                         <label class="flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all"
                                             :class="isSelected(grupo, adic) ? 'brand-border bg-[#FFEBEE]' : 'border-gray-100 hover:border-gray-200'"
-                                            @click="parseInt(grupo.tipo) === 2 && toggleCheckbox(grupo.idcategoria, adic.adicionalesid)"
+                                            @click="if (parseInt(grupo.tipo) === 2) toggleCheckbox(grupo.idcategoria, adic.adicionalesid)"
                                         >
                                             <div class="flex items-center gap-3">
                                                 <div class="w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all"
