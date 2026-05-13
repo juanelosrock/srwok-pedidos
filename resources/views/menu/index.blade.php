@@ -224,18 +224,33 @@
                                 <div class="flex items-center justify-between mb-3">
                                     <div>
                                         <h4 class="font-bold text-gray-900 text-sm" x-text="grupo.nombrecat"></h4>
-                                        <p class="text-xs text-gray-400 mt-0.5" x-text="parseInt(grupo.tipo) === 2 ? 'Elige varias opciones' : 'Elige 1 opción'"></p>
+                                        <p class="text-xs text-gray-400 mt-0.5"
+                                            x-text="parseInt(grupo.tipo) === 1
+                                                ? 'Elige 1 opción'
+                                                : (parseInt(grupo.minimo) === 0
+                                                    ? 'Elige hasta ' + grupo.maximo + ' opciones'
+                                                    : (parseInt(grupo.minimo) === parseInt(grupo.maximo)
+                                                        ? 'Elige ' + grupo.minimo + ' opciones'
+                                                        : 'Elige entre ' + grupo.minimo + ' y ' + grupo.maximo + ' opciones'))">
+                                        </p>
                                     </div>
-                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                                        :class="parseInt(grupo.tipo) === 2 ? 'bg-blue-50 text-blue-600' : 'bg-[#FFEBEE] brand-text'"
-                                        x-text="parseInt(grupo.tipo) === 2 ? 'Opcional' : 'Requerido'"
-                                    ></span>
+                                    <div class="flex flex-col items-end gap-1">
+                                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                                            :class="parseInt(grupo.minimo) >= 1 ? 'bg-[#FFEBEE] brand-text' : 'bg-blue-50 text-blue-600'"
+                                            x-text="parseInt(grupo.minimo) >= 1 ? 'Requerido' : 'Opcional'"
+                                        ></span>
+                                        <template x-if="parseInt(grupo.tipo) === 2">
+                                            <span class="text-xs text-gray-400"
+                                                x-text="(seleccionAdicionales[grupo.idcategoria] || []).length + '/' + grupo.maximo">
+                                            </span>
+                                        </template>
+                                    </div>
                                 </div>
                                 <div class="space-y-2">
                                     <template x-for="adic in grupo.adicionales" :key="adic.adicionalesid">
                                         <label class="flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all"
                                             :class="isSelected(grupo, adic) ? 'brand-border bg-[#FFEBEE]' : 'border-gray-100 hover:border-gray-200'"
-                                            @click="if (parseInt(grupo.tipo) === 2) toggleCheckbox(grupo.idcategoria, adic.adicionalesid)"
+                                            @click="if (parseInt(grupo.tipo) === 2) toggleCheckbox(grupo.idcategoria, adic.adicionalesid, grupo.maximo)"
                                         >
                                             <div class="flex items-center gap-3">
                                                 <div class="w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-all"
@@ -699,19 +714,27 @@ function menuApp() {
             return String(this.seleccionAdicionales[grupo.idcategoria]) === String(adic.adicionalesid);
         },
 
-        toggleCheckbox(idcategoria, adicionalesid) {
+        toggleCheckbox(idcategoria, adicionalesid, maximo) {
             const current = [...(this.seleccionAdicionales[idcategoria] || [])];
             const id = String(adicionalesid);
             const idx = current.indexOf(id);
-            if (idx === -1) current.push(id); else current.splice(idx, 1);
+            if (idx === -1) {
+                if (current.length >= parseInt(maximo)) return;
+                current.push(id);
+            } else {
+                current.splice(idx, 1);
+            }
             this.seleccionAdicionales[idcategoria] = current;
             this.verificarAdicionales();
         },
 
         verificarAdicionales() {
-            const requeridos = this.adicionalesProducto.filter(g => parseInt(g.tipo) === 1);
-            const completados = requeridos.filter(g => this.seleccionAdicionales[g.idcategoria] !== '').length;
-            this.puedoAgregar = completados >= requeridos.length;
+            this.puedoAgregar = this.adicionalesProducto.every(g => {
+                const min = parseInt(g.minimo);
+                if (min === 0) return true;
+                if (parseInt(g.tipo) === 2) return (this.seleccionAdicionales[g.idcategoria] || []).length >= min;
+                return this.seleccionAdicionales[g.idcategoria] !== '';
+            });
         },
 
         avanzarGrupo(idcategoria) {
