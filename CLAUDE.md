@@ -60,6 +60,11 @@ https://github.com/juanelosrock/srwok-pedidos
 - Fondo suave: `#FFEBEE`
 - Fondo medio: `#FFCDD2`
 
+## Instrucciones de trabajo
+- Cada vez que el usuario corrija un error de código, un enfoque incorrecto o una decisión de diseño, registrar la corrección en `MEMORY.md` bajo "Correcciones y lecciones aprendidas"
+- Cada vez que se complete una mejora o cambio significativo, registrarlo en `MEMORY.md` bajo "Cambios y mejoras"
+- Leer `MEMORY.md` al inicio de cada sesión para retomar contexto
+
 ## Notas importantes
 - `SibcoApiService::post()` retorna `mixed` porque `/validardireccionfix` devuelve un `int`, no un array
 - Todos los endpoints de la API devuelven objetos asociativos → usar `array_values()` antes de retornar al frontend
