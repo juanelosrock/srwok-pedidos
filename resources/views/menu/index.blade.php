@@ -822,7 +822,7 @@ function menuApp() {
                 nombreciudad: localStorage.getItem('nombreciudad') || '',
                 direccion: localStorage.getItem('direccion'), nombre: this.cliente.nombre,
                 correo: this.cliente.correo, celular: this.cliente.celular,
-                complemento: [localStorage.getItem('complemento') || '', this.cliente.complemento || ''].filter(Boolean).join(' '), formapago: this.formaPagoSeleccionada,
+                complemento: [localStorage.getItem('barrio') || '', localStorage.getItem('complemento') || '', this.cliente.complemento || ''].filter(Boolean).join(', '), formapago: this.formaPagoSeleccionada,
                 cabeceras: JSON.stringify(this.carrito.map(i => i.cabecera)),
                 pedidos: JSON.stringify(this.carrito.map(i => i.pedido)),
                 cantidades: JSON.stringify(this.carrito.map(i => ({ cantidad: i.cantidad }))),

@@ -148,6 +148,15 @@
                     </div>
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-xs text-gray-400 mb-1.5 font-medium">
+                        Barrio <span class="text-gray-300">(opcional)</span>
+                        <span class="block text-gray-300 font-normal mt-0.5">Este campo ayuda a mejorar la ubicación de tu pedido</span>
+                    </label>
+                    <input x-model="barrio" type="text" placeholder="Ej: El Poblado, Chapinero, Laureles..."
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700"/>
+                </div>
+
                 <div class="mb-5">
                     <label class="block text-xs text-gray-400 mb-1.5 font-medium">Complemento <span class="text-gray-300">(opcional)</span></label>
                     <input x-model="complemento" type="text" placeholder="Apto 301, Conjunto Los Pinos, Torre B..."
@@ -208,6 +217,7 @@ function homeApp() {
         paso: 'ciudad', ciudades: [], cargandoCiudades: true,
         ciudadSeleccionada: '', nombreCiudad: '', errorCiudad: '',
         dir: { tipo: '', num1: '', orient1: '', num2: '', orient2: '', num3: '' },
+        barrio: '',
         complemento: '',
         direccionPreview: '', buscando: false, sinCobertura: false, errorDir: '',
 
@@ -264,6 +274,7 @@ function homeApp() {
                     localStorage.setItem('ciudad', this.ciudadSeleccionada);
                     localStorage.setItem('nombreciudad', this.nombreCiudad);
                     localStorage.setItem('direccion', direccion);
+                    localStorage.setItem('barrio', this.barrio.trim());
                     localStorage.setItem('complemento', this.complemento.trim());
                     window.location.href = '{{ route("menu") }}';
                 }
