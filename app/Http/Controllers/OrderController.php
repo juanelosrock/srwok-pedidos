@@ -17,6 +17,7 @@ class OrderController extends Controller
             'pdv'           => ['required', 'string'],
             'ciudad'        => ['required', 'string'],
             'direccion'     => ['required', 'string'],
+            'barrio'        => ['nullable', 'string'],
             'nombre'        => ['required', 'string', 'min:3'],
             'correo'        => ['required', 'email'],
             'celular'       => ['required', 'string', 'min:7'],
@@ -203,7 +204,8 @@ class OrderController extends Controller
         $cliente->appendChild($doc->createElement('NOMBRE',    $data['nombre']));
         $cliente->appendChild($doc->createElement('APELLIDO',  '0'));
         $cliente->appendChild($doc->createElement('CORREO',    $data['correo']));
-        $cliente->appendChild($doc->createElement('DIRECCION', $data['direccion']));
+        $direccionCompleta = trim($data['direccion']) . (!empty($data['barrio']) ? ', ' . trim($data['barrio']) : '');
+        $cliente->appendChild($doc->createElement('DIRECCION', $direccionCompleta));
         $cliente->appendChild($doc->createElement('CIUDAD',    $data['ciudad']));
         $cliente->appendChild($doc->createElement('TELEFONO',  $data['celular']));
         $cliente->appendChild($doc->createElement('DIRECCION2', $data['complemento'] ?? ''));
