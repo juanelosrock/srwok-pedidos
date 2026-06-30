@@ -3,6 +3,7 @@
 @section('title', 'Sr WOK - Pedidos Online')
 
 @push('head')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     :root { --rappi: #C62828; --rappi-dark: #B71C1C; }
     .btn-rappi { background-color: var(--rappi); }
@@ -178,6 +179,72 @@
             </div>
         </div>
 
+        {{-- Paso 3: Confirmación en mapa --}}
+        <template x-if="paso === 'mapa'">
+            <div class="space-y-3">
+
+                {{-- Volver + dirección --}}
+                <div class="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3">
+                    <button @click="if(mapaLeaflet){ mapaLeaflet.remove(); mapaLeaflet = null; } paso = 'direccion'" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 flex-shrink-0 transition-colors">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <div class="w-8 h-8 bg-[#FFCDD2] rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-[#C62828]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Dirección de entrega</p>
+                        <p class="font-semibold text-gray-800 text-sm" x-text="direccionPreview + (barrio.trim() ? ', ' + barrio.trim() : '')"></p>
+                    </div>
+                </div>
+
+                {{-- Mapa --}}
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <template x-if="geocoding && geocoding.ok">
+                        <div>
+                            <div id="mapa-ubicacion" style="height: 260px"
+                                 x-init="$nextTick(() => iniciarMapa())"></div>
+                            <div class="p-4">
+                                <template x-if="geocoding && !geocoding.confiable && geocoding.aviso">
+                                    <div class="flex gap-2 items-start bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
+                                        <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <p class="text-xs text-amber-700" x-text="geocoding.aviso"></p>
+                                    </div>
+                                </template>
+                                <p class="text-xs text-gray-400">Ubicación encontrada</p>
+                                <p class="text-sm text-gray-700 mt-0.5" x-text="geocoding.display_name"></p>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="!geocoding || !geocoding.ok">
+                        <div class="flex flex-col items-center gap-2 p-6 text-center">
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                            </svg>
+                            <p class="text-sm text-gray-400">No fue posible mostrar la ubicación en el mapa.</p>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Botón continuar --}}
+                <button
+                    @click="window.location.href = '{{ route('menu') }}'"
+                    class="btn-rappi w-full text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                    <span>Ir al menú</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+
+            </div>
+        </template>
+
     </main>
 
     {{-- Modal sin cobertura --}}
@@ -211,6 +278,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 function homeApp() {
     return {
@@ -220,6 +288,7 @@ function homeApp() {
         barrio: '',
         complemento: '',
         direccionPreview: '', buscando: false, sinCobertura: false, errorDir: '',
+        geocoding: null, mapaLeaflet: null,
 
         async cargarCiudades() {
             try {
@@ -251,6 +320,37 @@ function homeApp() {
             }
         },
 
+        async geocodificar() {
+            const deptos = {
+                'Armenia': 'Quindío', 'Bogotá': 'Bogotá D.C.', 'Cali': 'Valle del Cauca',
+                'Ibagué': 'Tolima', 'Manizales': 'Caldas', 'Medellín': 'Antioquia',
+                'Palmira': 'Valle del Cauca', 'Pereira': 'Risaralda',
+                'Popayán': 'Cauca', 'Tuluá': 'Valle del Cauca',
+            };
+            const depto = deptos[this.nombreCiudad] || '';
+            const partes = [this.direccionPreview, this.barrio.trim(), this.nombreCiudad, depto, 'Colombia'].filter(Boolean);
+            try {
+                const res = await fetch('{{ route("api.geocodificar") }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direccion: partes.join(', ') })
+                });
+                this.geocoding = await res.json();
+            } catch (e) {
+                this.geocoding = null;
+            }
+        },
+
+        iniciarMapa() {
+            if (this.mapaLeaflet || !this.geocoding || !this.geocoding.ok) return;
+            const { lat, lng } = this.geocoding;
+            this.mapaLeaflet = L.map('mapa-ubicacion').setView([lat, lng], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(this.mapaLeaflet);
+            L.marker([lat, lng]).addTo(this.mapaLeaflet);
+        },
+
         async buscarDireccion() {
             this.errorDir = '';
             const { tipo, num1, orient1, num2, orient2, num3 } = this.dir;
@@ -276,7 +376,8 @@ function homeApp() {
                     localStorage.setItem('direccion', direccion);
                     localStorage.setItem('barrio', this.barrio.trim());
                     localStorage.setItem('complemento', this.complemento.trim());
-                    window.location.href = '{{ route("menu") }}';
+                    await this.geocodificar();
+                    this.paso = 'mapa';
                 }
             } catch (e) {
                 this.errorDir = 'Error al verificar la dirección.';

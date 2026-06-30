@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\SibcoApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class HomeController extends Controller
 {
@@ -30,5 +31,18 @@ class HomeController extends Controller
 
         $resultado = $this->sibco->validarDireccion($data['ciudad'], $data['direccion']);
         return response()->json($resultado);
+    }
+
+    public function geocodificar(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'direccion' => ['required', 'string', 'max:255'],
+        ]);
+
+        $response = Http::withToken(config('geocoding.token'))
+            ->acceptJson()
+            ->post(config('geocoding.url'), ['direccion' => $data['direccion']]);
+
+        return response()->json($response->json(), $response->status());
     }
 }

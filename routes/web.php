@@ -11,6 +11,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // API — Ciudad y dirección
 Route::post('/api/ciudades',          [HomeController::class, 'ciudades'])->name('api.ciudades');
 Route::post('/api/validar-direccion', [HomeController::class, 'validarDireccion'])->name('api.validar-direccion');
+Route::post('/api/geocodificar',      [HomeController::class, 'geocodificar'])->name('api.geocodificar');
 
 // Menú
 Route::get('/menu', [MenuController::class, 'index'])->name('menu');
