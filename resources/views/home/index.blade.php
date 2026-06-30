@@ -205,8 +205,19 @@
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
                     <template x-if="geocoding && geocoding.lat && geocoding.lng">
                         <div>
-                            <div id="mapa-ubicacion" style="height: 260px"
-                                 x-init="$nextTick(() => iniciarMapa())"></div>
+                            <div style="position: relative; height: 260px" x-init="$nextTick(() => iniciarMapa())">
+                                <div id="mapa-ubicacion" style="height: 100%"></div>
+                                {{-- Pin fijo en el centro --}}
+                                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:1000;pointer-events:none">
+                                    <svg width="30" height="36" viewBox="0 0 30 36" fill="none">
+                                        <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 21 15 21s15-10.5 15-21C30 6.716 23.284 0 15 0z" fill="#C62828"/>
+                                        <circle cx="15" cy="15" r="5.5" fill="white"/>
+                                    </svg>
+                                </div>
+                                {{-- Sombra del pin --}}
+                                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;width:10px;height:5px;background:rgba(0,0,0,0.25);border-radius:50%;filter:blur(2px);pointer-events:none"></div>
+                            </div>
+                            <p class="text-xs text-gray-400 text-center py-2">Arrastra el mapa para ajustar el punto de entrega</p>
                             <div class="p-4">
                                 <template x-if="geocoding && !geocoding.confiable && geocoding.aviso">
                                     <div class="flex gap-2 items-start bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
@@ -288,7 +299,7 @@ function homeApp() {
         barrio: '',
         complemento: '',
         direccionPreview: '', buscando: false, sinCobertura: false, errorDir: '',
-        geocoding: null, mapaLeaflet: null,
+        geocoding: null, mapaLeaflet: null, coordenadasSeleccionadas: null,
 
         async cargarCiudades() {
             try {
@@ -344,11 +355,15 @@ function homeApp() {
         iniciarMapa() {
             if (this.mapaLeaflet || !this.geocoding || !this.geocoding.lat || !this.geocoding.lng) return;
             const { lat, lng } = this.geocoding;
+            this.coordenadasSeleccionadas = { lat, lng };
             this.mapaLeaflet = L.map('mapa-ubicacion').setView([lat, lng], 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(this.mapaLeaflet);
-            L.marker([lat, lng]).addTo(this.mapaLeaflet);
+            this.mapaLeaflet.on('moveend', () => {
+                const c = this.mapaLeaflet.getCenter();
+                this.coordenadasSeleccionadas = { lat: c.lat, lng: c.lng };
+            });
         },
 
         async buscarDireccion() {
