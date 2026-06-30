@@ -203,43 +203,27 @@
 
                 {{-- Mapa --}}
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <template x-if="geocoding && geocoding.lat && geocoding.lng">
-                        <div>
-                            <div style="position: relative; height: 260px" x-init="$nextTick(() => iniciarMapa())">
-                                <div id="mapa-ubicacion" style="height: 100%"></div>
-                                {{-- Pin fijo en el centro --}}
-                                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:1000;pointer-events:none">
-                                    <svg width="30" height="36" viewBox="0 0 30 36" fill="none">
-                                        <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 21 15 21s15-10.5 15-21C30 6.716 23.284 0 15 0z" fill="#C62828"/>
-                                        <circle cx="15" cy="15" r="5.5" fill="white"/>
-                                    </svg>
-                                </div>
-                                {{-- Sombra del pin --}}
-                                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;width:10px;height:5px;background:rgba(0,0,0,0.25);border-radius:50%;filter:blur(2px);pointer-events:none"></div>
-                            </div>
-                            <p class="text-xs text-gray-400 text-center py-2">Arrastra el mapa para ajustar el punto de entrega</p>
-                            <div class="p-4">
-                                <template x-if="geocoding && !geocoding.confiable && geocoding.aviso">
-                                    <div class="flex gap-2 items-start bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
-                                        <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                        </svg>
-                                        <p class="text-xs text-amber-700" x-text="geocoding.aviso"></p>
-                                    </div>
-                                </template>
-                                <p class="text-xs text-gray-400">Ubicación encontrada</p>
-                                <p class="text-sm text-gray-700 mt-0.5" x-text="geocoding.display_name"></p>
-                            </div>
-                        </div>
-                    </template>
-                    <template x-if="!geocoding || !geocoding.lat || !geocoding.lng">
-                        <div class="flex flex-col items-center gap-2 p-6 text-center">
-                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                    <div style="position: relative; height: 260px" x-init="$nextTick(() => iniciarMapa())">
+                        <div id="mapa-ubicacion" style="height: 100%"></div>
+                        {{-- Pin fijo en el centro --}}
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:1000;pointer-events:none">
+                            <svg width="30" height="36" viewBox="0 0 30 36" fill="none">
+                                <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 21 15 21s15-10.5 15-21C30 6.716 23.284 0 15 0z" fill="#C62828"/>
+                                <circle cx="15" cy="15" r="5.5" fill="white"/>
                             </svg>
-                            <p class="text-sm text-gray-400">No fue posible mostrar la ubicación en el mapa.</p>
                         </div>
-                    </template>
+                        {{-- Sombra del pin --}}
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;width:10px;height:5px;background:rgba(0,0,0,0.25);border-radius:50%;filter:blur(2px);pointer-events:none"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 text-center py-2">Arrastra el mapa para ajustar el punto de entrega</p>
+                    <div class="px-4 pb-4" x-show="geocoding && geocoding.aviso">
+                        <div class="flex gap-2 items-start bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                            <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <p class="text-xs text-amber-700" x-text="geocoding && geocoding.aviso"></p>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Botón continuar --}}
@@ -353,10 +337,18 @@ function homeApp() {
         },
 
         iniciarMapa() {
-            if (this.mapaLeaflet || !this.geocoding || !this.geocoding.lat || !this.geocoding.lng) return;
-            const { lat, lng } = this.geocoding;
+            if (this.mapaLeaflet) return;
+            const centrosCiudad = {
+                'Armenia': [4.534, -75.681], 'Bogotá': [4.624, -74.064], 'Cali': [3.451, -76.532],
+                'Ibagué': [4.438, -75.232], 'Manizales': [5.068, -75.517], 'Medellín': [6.244, -75.574],
+                'Palmira': [3.540, -76.304], 'Pereira': [4.814, -75.696],
+                'Popayán': [2.441, -76.607], 'Tuluá': [4.086, -76.196],
+            };
+            const lat = this.geocoding?.lat || (centrosCiudad[this.nombreCiudad] || [4.624, -74.064])[0];
+            const lng = this.geocoding?.lng || (centrosCiudad[this.nombreCiudad] || [4.624, -74.064])[1];
+            const zoom = this.geocoding?.lat ? 16 : 13;
             this.coordenadasSeleccionadas = { lat, lng };
-            this.mapaLeaflet = L.map('mapa-ubicacion').setView([lat, lng], 16);
+            this.mapaLeaflet = L.map('mapa-ubicacion').setView([lat, lng], zoom);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(this.mapaLeaflet);
