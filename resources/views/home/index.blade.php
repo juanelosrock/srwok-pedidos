@@ -203,7 +203,7 @@
 
                 {{-- Mapa --}}
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <template x-if="geocoding && geocoding.ok">
+                    <template x-if="geocoding && geocoding.lat && geocoding.lng">
                         <div>
                             <div id="mapa-ubicacion" style="height: 260px"
                                  x-init="$nextTick(() => iniciarMapa())"></div>
@@ -221,7 +221,7 @@
                             </div>
                         </div>
                     </template>
-                    <template x-if="!geocoding || !geocoding.ok">
+                    <template x-if="!geocoding || !geocoding.lat || !geocoding.lng">
                         <div class="flex flex-col items-center gap-2 p-6 text-center">
                             <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
@@ -342,7 +342,7 @@ function homeApp() {
         },
 
         iniciarMapa() {
-            if (this.mapaLeaflet || !this.geocoding || !this.geocoding.ok) return;
+            if (this.mapaLeaflet || !this.geocoding || !this.geocoding.lat || !this.geocoding.lng) return;
             const { lat, lng } = this.geocoding;
             this.mapaLeaflet = L.map('mapa-ubicacion').setView([lat, lng], 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
